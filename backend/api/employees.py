@@ -29,7 +29,7 @@ def create_employee(emp_data: EmployeeCreate, db: Session = Depends(get_db)):
     db.refresh(emp)
     return emp
 
-@router.get("/{id}/articles")
-def get_employee_articles(id: int, db: Session = Depends(get_db)):
-    articles = db.query(Article).join(Author).filter(Author.employee_id == id).all()
-    return articles
+#@router.get("/{id}/articles")
+#def get_employee_articles(id: int, db: Session = Depends(get_db)):
+#    articles = db.query(Article).join(Author).filter(Author.employee_id == id).all()
+#    return articles

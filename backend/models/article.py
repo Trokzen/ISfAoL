@@ -9,7 +9,6 @@ class Article(Base):
     year_pub = Column(Integer, nullable=False)
     in_rinc = Column(Boolean, default=False)
     authors = relationship("Author", back_populates="article")
-    # employees = relationship("Employee", secondary=employee_articles, back_populates="articles")  # <-- Удалите
 
 class Author(Base):
     __tablename__ = "authors"

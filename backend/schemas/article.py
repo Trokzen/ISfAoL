@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional
+from datetime import date
 
 class AuthorOut(BaseModel):
     id: int
@@ -7,10 +8,13 @@ class AuthorOut(BaseModel):
     author_name: str
     contribution: float
     applied_for_award: bool
-    award_applied_date: Optional[str]
+    award_applied_date: Optional[date]  # Изменили на Optional[date]
 
     class Config:
         from_attributes = True
+        json_encoders = {
+            date: lambda v: v.isoformat() if v else None  # Конвертируем дату в ISO строку при сериализации
+        }
 
 class ArticleOut(BaseModel):
     id: int
