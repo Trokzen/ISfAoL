@@ -1,0 +1,13 @@
+{
+  "title": "Test Article",
+  "year_pub": 2025,
+  "in_rinc": false,
+  "authors": [
+    {
+      "author_name": "Test Author",
+      "contribution": 100,
+      "applied_for_award": false,
+      "award_applied_date": null
+    }
+  ]
+}

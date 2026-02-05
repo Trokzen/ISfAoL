@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import event
+from models import Base  # Импортируем Base из models
 import urllib.parse
 
 # Подключаемся к БД 'postgres', но используем схему 'elibrary'

@@ -1,0 +1,14 @@
+{
+  "title": "Тестовая статья через curl",
+  "year_pub": 2024,
+  "in_rinc": true,
+  "authors": [
+    {
+      "author_name": "Петров П.П.",
+      "contribution": 100.0,
+      "applied_for_award": false,
+      "award_applied_date": null
+    }
+  ],
+  "employee_ids": []
+}

@@ -6,4 +6,7 @@ class Employee(Base):
     __tablename__ = "employees"
     id = Column(Integer, primary_key=True, index=True)
     fio = Column(String, nullable=False)
-    # departments = relationship("Department", secondary=employee_departments, back_populates="employees")  # <-- Удалите
+
+    # Связи многие-ко-многим
+    departments = relationship("Department", secondary="elibrary.employee_departments", overlaps="Department.employees")
+    articles = relationship("Article", secondary="elibrary.employee_articles", overlaps="Article.employees")

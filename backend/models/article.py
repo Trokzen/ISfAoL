@@ -4,11 +4,13 @@ from . import Base
 
 class Article(Base):
     __tablename__ = "articles"
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     title = Column(String, nullable=False)
     year_pub = Column(Integer, nullable=False)
     in_rinc = Column(Boolean, default=False)
     authors = relationship("Author", back_populates="article")
+    # Связь с сотрудниками через промежуточную таблицу
+    employees = relationship("Employee", secondary="elibrary.employee_articles", overlaps="Employee.articles")
 
 class Author(Base):
     __tablename__ = "authors"

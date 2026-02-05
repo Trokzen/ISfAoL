@@ -49,6 +49,8 @@ def run_migrations_offline() -> None:
     )
 
     with context.begin_transaction():
+        # Устанавливаем search_path для использования схемы elibrary
+        context.execute("SET search_path TO elibrary")
         context.run_migrations()
 
 
@@ -71,6 +73,8 @@ def run_migrations_online() -> None:
         )
 
         with context.begin_transaction():
+            # Устанавливаем search_path для использования схемы elibrary
+            connection.execute("SET search_path TO elibrary")
             context.run_migrations()
 
 

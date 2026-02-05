@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тест создания статьи</title>
+</head>
+<body>
+    <h1>Тест создания статьи</h1>
+    
+    <div>
+        <label>Логин:</label>
+        <input type="text" id="username" value="admin">
+    </div>
+    <div>
+        <label>Пароль:</label>
+        <input type="password" id="password" value="admin">
+    </div>
+    <button onclick="login()">Войти</button>
+    
+    <hr>
+    
+    <div>
+        <label>Название статьи:</label>
+        <input type="text" id="title" value="Тестовая статья из браузера">
+    </div>
+    <div>
+        <label>Год публикации:</label>
+        <input type="number" id="year_pub" value="2024">
+    </div>
+    <div>
+        <label>В РИНЦ:</label>
+        <input type="checkbox" id="in_rinc" checked>
+    </div>
+    <div>
+        <label>Имя автора:</label>
+        <input type="text" id="author_name" value="Иванов И.И.">
+    </div>
+    <div>
+        <label>Вклад (%):</label>
+        <input type="number" id="contribution" value="100" step="0.01">
+    </div>
+    <button onclick="createArticle()">Создать статью</button>
+    
+    <div id="result"></div>
+
+    <script>
+        let authToken = null;
+        
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/auth/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: `username=${encodeURIComponent(username)}&password=${encodeURIComponent(password)}`
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    authToken = data.access_token;
+                    document.getElementById('result').innerHTML = '<p>Успешно вошли в систему!</p>';
+                    console.log('Token:', authToken);
+                } else {
+                    const error = await response.text();
+                    document.getElementById('result').innerHTML = `<p>Ошибка входа: ${error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p>Ошибка сети: ${error.message}</p>`;
+            }
+        }
+        
+        async function createArticle() {
+            if (!authToken) {
+                document.getElementById('result').innerHTML = '<p>Сначала войдите в систему!</p>';
+                return;
+            }
+            
+            const articleData = {
+                title: document.getElementById('title').value,
+                year_pub: parseInt(document.getElementById('year_pub').value),
+                in_rinc: document.getElementById('in_rinc').checked,
+                authors: [{
+                    author_name: document.getElementById('author_name').value,
+                    contribution: parseFloat(document.getElementById('contribution').value),
+                    applied_for_award: false,
+                    award_applied_date: null
+                }],
+                employee_ids: []
+            };
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/articles/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(articleData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    document.getElementById('result').innerHTML = `<p>Статья успешно создана! ID: ${result.id}</p><pre>${JSON.stringify(result, null, 2)}</pre>`;
+                } else {
+                    const error = await response.text();
+                    document.getElementById('result').innerHTML = `<p>Ошибка создания статьи: ${error}</p>`;
+                }
+            } catch (error) {
+                document.getElementById('result').innerHTML = `<p>Ошибка сети: ${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>
