@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:8000/api',
+  baseURL: 'http://127.0.0.1:8000',
   headers: {
     'Content-Type': 'application/json'
   }
@@ -15,4 +15,19 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+// Перехватываем 401 ошибки и выполняем logout
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      // Удаляем токен и перенаправляем на страницу входа
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Экспортируем базовый axios для прямых запросов
+export { axios };
 export default api;
