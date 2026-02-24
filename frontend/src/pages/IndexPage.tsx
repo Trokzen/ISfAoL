@@ -23,8 +23,10 @@ import {
   Pagination,
   Select,
   Flex,
+  Modal,
 } from '@mantine/core';
-import { IconAward, IconBook, IconSearch, IconUser, IconCalendar, IconDatabase } from '@tabler/icons-react';
+import { useNavigate } from 'react-router-dom';
+import { IconAward, IconBook, IconSearch, IconUser, IconCalendar, IconDatabase, IconTrash, IconAlertTriangle, IconHash } from '@tabler/icons-react';
 import api from '../utils/api';
 
 interface Author {
@@ -38,6 +40,7 @@ interface Author {
 
 interface Article {
   id: number;
+  external_id?: number; // Внешний ID статьи из elibrary
   title: string;
   year_pub: number;
   in_rinc: boolean;
@@ -53,6 +56,7 @@ interface ApiResponse {
 }
 
 const IndexPage: React.FC = () => {
+  const navigate = useNavigate();
   const [articles, setArticles] = useState<Article[]>([]);
   const [searchId, setSearchId] = useState<string>('');
   const [searchTitle, setSearchTitle] = useState<string>('');
@@ -63,10 +67,36 @@ const IndexPage: React.FC = () => {
   const [perPage, setPerPage] = useState<number>(12); // По умолчанию 12 статей на странице
   const [totalPages, setTotalPages] = useState<number>(1);
   const [totalArticles, setTotalArticles] = useState<number>(0);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [articleToDelete, setArticleToDelete] = useState<{id: number, title: string} | null>(null);
+
+  // Получаем роль текущего пользователя
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Декодируем JWT токен, чтобы получить роль
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const userData = JSON.parse(jsonPayload);
+        setCurrentUserRole(userData.role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
 
   const fetchArticles = async () => {
     try {
       setError(null);
+      // Используем URLSearchParams для удобного формирования строки запроса
       const params = new URLSearchParams();
       if (searchId) params.append('search_id', searchId);
       if (searchTitle) params.append('search_title', searchTitle);
@@ -81,18 +111,41 @@ const IndexPage: React.FC = () => {
       setArticles(response.data.articles);
       setTotalPages(response.data.pages);
       setTotalArticles(response.data.total);
-
     } catch (error) {
       console.error('Error fetching articles:', error);
-      setError('Ошибка при загрузке данных. Пожалуйста, попробуйте позже.');
+      setError('Ошибка при загрузке статей. Пожалуйста, попробуйте снова.');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDeleteArticle = async (id: number, title: string) => {
+    setArticleToDelete({ id, title });
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDeleteArticle = async () => {
+    if (!articleToDelete) return;
+    
+    setDeleting(true);
+    setDeleteError(null);
+    
+    try {
+      await api.delete(`/articles/${articleToDelete.id}`);
+      setDeleteModalOpen(false);
+      // Обновляем список статей
+      fetchArticles();
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      setDeleteError('Ошибка при удалении статьи. Пожалуйста, попробуйте снова.');
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   useEffect(() => {
     fetchArticles();
-  }, [searchId, searchTitle, page, perPage]);
+  }, [page, perPage, searchId, searchTitle, searchAuthor]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,6 +303,11 @@ const IndexPage: React.FC = () => {
                               <IconCalendar size={14} />
                               {article.year_pub} год
                             </Group>
+                            
+                            <Group gap="xs" align="center">
+                              <IconHash size={14} />
+                              {article.external_id ? `#${article.external_id}` : 'отсутствует'}
+                            </Group>
                           </Text>
                         </Box>
 
@@ -283,16 +341,27 @@ const IndexPage: React.FC = () => {
                         </Box>
                       </div>
 
-                      <ActionIcon
-                        component="a"
-                        href={`/article/${article.id}`}
-                        variant="light"
-                        color="blue"
-                        aria-label="Перейти к работе"
-                        w="100%"
-                      >
-                        <IconDatabase size={16} />
-                      </ActionIcon>
+                      <Group justify="space-between" w="100%">
+                        <ActionIcon
+                          component="a"
+                          href={`/article/${article.id}`}
+                          variant="light"
+                          color="blue"
+                          aria-label="Перейти к работе"
+                        >
+                          <IconDatabase size={16} />
+                        </ActionIcon>
+                        {currentUserRole === 'admin' && (
+                          <ActionIcon
+                            variant="light"
+                            color="red"
+                            aria-label="Удалить работу"
+                            onClick={() => handleDeleteArticle(article.id, article.title)}
+                          >
+                            <IconTrash size={16} />
+                          </ActionIcon>
+                        )}
+                      </Group>
                     </Stack>
                   </Card>
                 );
@@ -339,6 +408,53 @@ const IndexPage: React.FC = () => {
           )}
         </>
       )}
+
+      {/* Модальное окно подтверждения удаления */}
+      <Modal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title={
+          <Group gap="sm">
+            <IconAlertTriangle color="red" />
+            <Text fw={600}>Подтверждение удаления</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Вы уверены, что хотите удалить статью <Text fw={700}>"{articleToDelete?.title}"</Text>?
+          </Text>
+          <Text c="dimmed">
+            Это действие нельзя будет отменить. Все данные статьи будут безвозвратно удалены.
+          </Text>
+          
+          {deleteError && (
+            <Alert variant="light" color="red" title="Ошибка">
+              {deleteError}
+            </Alert>
+          )}
+          
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleting}
+            >
+              Отмена
+            </Button>
+            <Button
+              color="red"
+              leftSection={<IconTrash />}
+              onClick={confirmDeleteArticle}
+              loading={deleting}
+            >
+              Удалить
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 };

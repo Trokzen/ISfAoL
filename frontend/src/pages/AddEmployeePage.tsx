@@ -13,10 +13,10 @@ import {
   rem,
   ThemeIcon,
   Alert,
-  Select,
+  PasswordInput,
   MultiSelect,
 } from '@mantine/core';
-import { IconUserPlus, IconUser, IconBuilding, IconMail, IconPhone, IconCheck, IconX } from '@tabler/icons-react';
+import { IconUserPlus, IconUser, IconLock, IconAt, IconBuilding, IconMail, IconCheck, IconX, IconHash } from '@tabler/icons-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 
@@ -26,18 +26,19 @@ interface Department {
 }
 
 export default function AddEmployeePage() {
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [middleName, setMiddleName] = useState('');
-  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
-  const [position, setPosition] = useState('');
+  const [login, setLogin] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
+  // Поле fio больше не используется, так как оно не требуется в новой структуре
+  const [idElibraryUser, setIdElibraryUser] = useState(''); // ID пользователя в elibrary
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
+  const [selectedDepartments, setSelectedDepartments] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [departments, setDepartments] = useState<{value: string, label: string}[]>([]);
   const navigate = useNavigate();
 
+  // Загрузка списка подразделений
   const fetchDepartments = async () => {
     try {
       const response = await api.get('/departments/');
@@ -62,25 +63,24 @@ export default function AddEmployeePage() {
     setError(null);
 
     // Проверяем, что все обязательные поля заполнены
-    if (!firstName || !lastName || selectedDepartments.length === 0) {
+    if (!login || !password || !fullName) {
       setError('Пожалуйста, заполните все обязательные поля');
       setLoading(false);
       return;
     }
 
     try {
-      const employeeData = {
-        first_name: firstName,
-        last_name: lastName,
-        middle_name: middleName,
-        department_ids: selectedDepartments.map(Number), // Преобразуем в числа
-        position,
-        email,
-        phone
+      const userData = {
+        login,
+        password,
+        full_name: fullName,
+        id_elibrary_user: idElibraryUser || null, // Если id_elibrary_user не указано, отправляем null
+        email: email || null,
+        department_ids: selectedDepartments.map(Number) // Преобразуем в числа
       };
 
-      await api.post('/employees/with-details', employeeData);
-      navigate('/departments'); // Перенаправляем на список департаментов после добавления
+      await api.post('/employees/with-details', userData);
+      navigate('/departments'); // Перенаправляем на список подразделений после добавления
     } catch (error: any) {
       console.error('Error adding employee:', error);
       setError(error.response?.data?.detail || 'Ошибка при добавлении сотрудника. Пожалуйста, проверьте данные и попробуйте снова.');
@@ -121,34 +121,53 @@ export default function AddEmployeePage() {
 
         <form onSubmit={handleSubmit}>
           <Stack gap="lg">
-            <Group grow>
-              <TextInput
-                leftSection={<IconUser size={16} />}
-                label="Фамилия"
-                placeholder="Фамилия"
-                value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
-                required
-                size="md"
-              />
+            <TextInput
+              leftSection={<IconUser size={16} />}
+              label="Логин"
+              placeholder="Введите логин пользователя"
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              required
+              size="md"
+            />
 
-              <TextInput
-                leftSection={<IconUser size={16} />}
-                label="Имя"
-                placeholder="Имя"
-                value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
-                required
-                size="md"
-              />
-            </Group>
+            <PasswordInput
+              leftSection={<IconLock size={16} />}
+              label="Пароль"
+              placeholder="Введите пароль"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              size="md"
+            />
 
             <TextInput
               leftSection={<IconUser size={16} />}
-              label="Отчество"
-              placeholder="Отчество"
-              value={middleName}
-              onChange={(e) => setMiddleName(e.target.value)}
+              label="ФИО"
+              placeholder="Введите полное имя"
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              required
+              size="md"
+            />
+
+
+            <TextInput
+              leftSection={<IconHash size={16} />}
+              label="ID пользователя в elibrary (опционально)"
+              placeholder="Введите ID пользователя в системе elibrary"
+              value={idElibraryUser}
+              onChange={(e) => setIdElibraryUser(e.target.value)}
+              size="md"
+            />
+
+            <TextInput
+              leftSection={<IconAt size={16} />}
+              label="Email (опционально)"
+              placeholder="email@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              type="email"
               size="md"
             />
 
@@ -159,41 +178,10 @@ export default function AddEmployeePage() {
               data={departments}
               value={selectedDepartments}
               onChange={setSelectedDepartments}
-              required
               size="md"
               searchable
               nothingFoundMessage="Подразделения не найдены"
             />
-
-            <TextInput
-              leftSection={<IconUser size={16} />}
-              label="Должность"
-              placeholder="Название должности"
-              value={position}
-              onChange={(e) => setPosition(e.target.value)}
-              size="md"
-            />
-
-            <Group grow>
-              <TextInput
-                leftSection={<IconMail size={16} />}
-                label="Email"
-                placeholder="email@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                size="md"
-              />
-
-              <TextInput
-                leftSection={<IconPhone size={16} />}
-                label="Телефон"
-                placeholder="+7 (XXX) XXX-XXXX"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                size="md"
-              />
-            </Group>
 
             <Divider my="md" />
 

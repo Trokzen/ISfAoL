@@ -38,7 +38,8 @@ import api from '../utils/api';
 
 interface Employee {
   id: number;
-  fio: string;
+  full_name: string;
+  id_elibrary_user?: string;
 }
 
 interface User {
@@ -52,7 +53,7 @@ interface Department {
   id: number;
   name: string;
   manager_id: number | null;
-  employees: Employee[];
+  users?: User[]; // Пользователи (сотрудники) могут быть необязательными
 }
 
 export default function DepartmentsListPage() {
@@ -81,12 +82,16 @@ export default function DepartmentsListPage() {
 
   const fetchUsers = async () => {
     try {
+      // Получаем всех пользователей
       const response = await api.get('/auth/users');
-      const users = response.data.map((user: User) => ({
-        value: user.id.toString(),
-        label: `${user.login} (${user.full_name || user.email || 'Без ФИО'})`
-      }));
-      setAllUsers(users);
+      // Фильтруем только пользователей с ролью "manager"
+      const managers = response.data
+        .filter((user: User) => user.role === 'manager')
+        .map((user: User) => ({
+          value: user.id.toString(),
+          label: user.full_name || user.email || `Пользователь ${user.id}`
+        }));
+      setAllUsers(managers);
     } catch (err) {
       console.error('Error fetching users:', err);
       // Если эндпоинт не существует, используем пустой массив
@@ -253,17 +258,22 @@ export default function DepartmentsListPage() {
 
                   <Stack gap="xs" flex={1}>
                     <Text fw={500} size="sm">Сотрудники:</Text>
-                    {department.employees.slice(0, 3).map((employee) => (
-                      <Group key={employee.id} justify="space-between">
-                        <Text size="sm">{employee.fio}</Text>
+                    {department.users && department.users.slice(0, 3).map((user) => (
+                      <Group key={user.id} justify="space-between">
+                        <Text size="sm">{user.full_name}</Text>
                       </Group>
                     ))}
-                    {department.employees.length > 3 && (
+                    {department.users && department.users.length > 3 && (
                       <Text size="sm" c="dimmed">
-                        и ещё {department.employees.length - 3} сотруд. ...
+                        и ещё {department.users.length - 3} сотруд. ...
                       </Text>
                     )}
-                    {department.employees.length === 0 && (
+                    {department.users && department.users.length === 0 && (
+                      <Text size="sm" c="dimmed">
+                        Нет сотрудников
+                      </Text>
+                    )}
+                    {!department.users && (
                       <Text size="sm" c="dimmed">
                         Нет сотрудников
                       </Text>

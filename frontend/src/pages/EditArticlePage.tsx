@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Container,
   Title,
@@ -12,13 +12,13 @@ import {
   Stack,
   NumberInput,
   Checkbox,
-  Select,
   rem,
   ThemeIcon,
   Alert,
+  LoadingOverlay,
 } from '@mantine/core';
 import { IconCirclePlus, IconBook, IconUser, IconCalendar, IconRuler, IconCheck, IconX, IconHash } from '@tabler/icons-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 
 interface Author {
@@ -26,32 +26,65 @@ interface Author {
   name: string;
   contribution: number;
   applied_for_award: boolean;
+  award_applied_date: string | null;
 }
 
-export default function AddArticlePage() {
-  const [id, setId] = useState<string>(''); // ID статьи (опционально)
+interface Article {
+  id: number;
+  external_id?: number; // Внешний ID статьи из elibrary
+  title: string;
+  year_pub: number;
+  in_rinc: boolean;
+  authors: Author[];
+}
+
+export default function EditArticlePage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const [articleId, setArticleId] = useState<string>('');
   const [title, setTitle] = useState('');
   const [yearPub, setYearPub] = useState<number | undefined>(undefined);
   const [inRinc, setInRinc] = useState<boolean>(false);
-  const [authors, setAuthors] = useState<Author[]>([{ id: Date.now(), name: '', contribution: 100, applied_for_award: false }]);
+  const [authors, setAuthors] = useState<Author[]>([]);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
 
-  const addAuthor = () => {
-    setAuthors([...authors, { id: Date.now(), name: '', contribution: 0, applied_for_award: false }]);
-  };
+  // Загружаем данные статьи
+  useEffect(() => {
+    const fetchArticle = async () => {
+      try {
+        setInitialLoading(true);
+        const response = await api.get<Article>(`/articles/${id}`);
+        const article = response.data;
+        
+        setArticleId(article.external_id ? article.external_id.toString() : '');
+        setTitle(article.title);
+        setYearPub(article.year_pub);
+        setInRinc(article.in_rinc);
+        setAuthors(article.authors.map(author => ({
+          ...author,
+          name: author.author_name,
+          applied_for_award: author.applied_for_award,
+          award_applied_date: author.award_applied_date
+        })));
+      } catch (err) {
+        setError('Ошибка при загрузке данных статьи. Пожалуйста, попробуйте снова.');
+        console.error(err);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
 
-  const removeAuthor = (id: number) => {
-    if (authors.length > 1) {
-      setAuthors(authors.filter(author => author.id !== id));
+    if (id) {
+      fetchArticle();
     }
-  };
+  }, [id]);
 
-  const updateAuthor = (id: number, field: keyof Author, value: any) => {
-    setAuthors(authors.map(author =>
-      author.id === id ? { ...author, [field]: value } : author
-    ));
+  const updateAuthor = (index: number, field: keyof Author, value: any) => {
+    const updatedAuthors = [...authors];
+    updatedAuthors[index] = { ...updatedAuthors[index], [field]: value };
+    setAuthors(updatedAuthors);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,26 +109,22 @@ export default function AddArticlePage() {
 
     try {
       const articleData: any = {
+        external_id: articleId ? parseInt(articleId, 10) : undefined,
         title,
         year_pub: yearPub,
         in_rinc: inRinc,
-        authors: authors.map(({ name, contribution, applied_for_award }) => ({
+        authors: authors.map(({ name, contribution, applied_for_award, award_applied_date }) => ({
           author_name: name,
           contribution,
           applied_for_award,
-          award_applied_date: null  // Указываем null для даты, если она не установлена
+          award_applied_date: award_applied_date
         }))
       };
 
-      // Добавляем external_id, если он был указан
-      if (id.trim() !== '') {
-        articleData.external_id = parseInt(id, 10);
-      }
-
-      await api.post('/articles/', articleData);  // Используем правильный маршрут с завершающим слэшем
-      navigate('/');
+      await api.put(`/articles/${id}`, articleData);
+      navigate(`/article/${id}`);
     } catch (err) {
-      setError('Ошибка при добавлении статьи. Пожалуйста, проверьте данные и попробуйте снова.');
+      setError('Ошибка при обновлении статьи. Пожалуйста, проверьте данные и попробуйте снова.');
       setLoading(false);
     }
   };
@@ -105,14 +134,14 @@ export default function AddArticlePage() {
       <Paper shadow="lg" p="xl" radius="md" withBorder>
         <Box mb="xl">
           <Group justify="center" mb="md">
-            <ThemeIcon size={60} radius="md" variant="light" color="green">
+            <ThemeIcon size={60} radius="md" variant="light" color="blue">
               <IconCirclePlus style={{ width: rem(32), height: rem(32) }} />
             </ThemeIcon>
           </Group>
 
-          <Title ta="center" mb="sm">Добавить новую статью</Title>
+          <Title ta="center" mb="sm">Редактировать статью</Title>
           <Text c="dimmed" ta="center">
-            Заполните информацию о научной статье и её авторах
+            Обновите информацию о научной статье и её авторах
           </Text>
         </Box>
 
@@ -131,14 +160,16 @@ export default function AddArticlePage() {
           </Alert>
         )}
 
+        <LoadingOverlay visible={initialLoading} />
+
         <form onSubmit={handleSubmit}>
           <Stack gap="lg">
             <TextInput
               leftSection={<IconHash size={16} />}
-              label="ID статьи (опционально)"
-              placeholder="Введите ID статьи или оставьте пустым для авто-назначения"
-              value={id}
-              onChange={(e) => setId(e.target.value)}
+              label="Внешний ID статьи (из elibrary)"
+              placeholder="Введите внешний ID статьи"
+              value={articleId}
+              onChange={(e) => setArticleId(e.target.value)}
               size="md"
             />
 
@@ -180,20 +211,9 @@ export default function AddArticlePage() {
             <Title order={3} mb="md">Информация об авторах</Title>
 
             {authors.map((author, index) => (
-              <Paper key={author.id} p="md" radius="md" withBorder>
+              <Paper key={author.id || index} p="md" radius="md" withBorder>
                 <Group justify="space-between" mb="sm">
                   <Text fw={500}>Автор #{index + 1}</Text>
-                  {authors.length > 1 && (
-                    <Button
-                      variant="subtle"
-                      color="red"
-                      size="compact-sm"
-                      onClick={() => removeAuthor(author.id)}
-                      leftSection={<IconX size={14} />}
-                    >
-                      Удалить
-                    </Button>
-                  )}
                 </Group>
 
                 <Stack gap="sm">
@@ -202,7 +222,7 @@ export default function AddArticlePage() {
                     label="ФИО автора"
                     placeholder="Фамилия Имя Отчество"
                     value={author.name}
-                    onChange={(e) => updateAuthor(author.id, 'name', e.target.value)}
+                    onChange={(e) => updateAuthor(index, 'name', e.target.value)}
                     required
                   />
 
@@ -212,7 +232,7 @@ export default function AddArticlePage() {
                       label="Вклад (%)"
                       placeholder="0-100"
                       value={author.contribution}
-                      onChange={(value) => updateAuthor(author.id, 'contribution', value || 0)}
+                      onChange={(value) => updateAuthor(index, 'contribution', value || 0)}
                       min={0}
                       max={100}
                       required
@@ -223,23 +243,12 @@ export default function AddArticlePage() {
                       pt="md"
                       label="Подан на премию"
                       checked={author.applied_for_award}
-                      onChange={(e) => updateAuthor(author.id, 'applied_for_award', e.currentTarget.checked)}
+                      onChange={(e) => updateAuthor(index, 'applied_for_award', e.currentTarget.checked)}
                     />
                   </Group>
                 </Stack>
               </Paper>
             ))}
-
-            <Group>
-              <Button
-                variant="light"
-                color="blue"
-                onClick={addAuthor}
-                leftSection={<IconUser size={16} />}
-              >
-                Добавить автора
-              </Button>
-            </Group>
 
             <Divider my="md" />
 
@@ -247,7 +256,7 @@ export default function AddArticlePage() {
               <Button
                 variant="outline"
                 color="gray"
-                onClick={() => navigate('/')}
+                onClick={() => navigate(`/article/${id}`)}
                 leftSection={<IconX size={16} />}
               >
                 Отмена
@@ -260,7 +269,7 @@ export default function AddArticlePage() {
                 size="md"
                 px="xl"
               >
-                Добавить статью
+                Обновить статью
               </Button>
             </Group>
           </Stack>

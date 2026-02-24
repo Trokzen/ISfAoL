@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Container,
   Title,
@@ -15,9 +15,11 @@ import {
   Avatar,
   ThemeIcon,
   rem,
+  Modal,
+  Notification,
 } from '@mantine/core';
-import { useParams } from 'react-router-dom';
-import { IconAward, IconBook, IconBuilding, IconMail, IconPhone, IconEdit, IconDatabase } from '@tabler/icons-react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { IconAward, IconBook, IconBuilding, IconMail, IconPhone, IconEdit, IconDatabase, IconTrash, IconAlertTriangle } from '@tabler/icons-react';
 import api from '../utils/api';
 
 interface Author {
@@ -34,6 +36,7 @@ interface Author {
 
 interface Article {
   id: number;
+  external_id?: number; // Внешний ID статьи из elibrary
   title: string;
   year_pub: number;
   in_rinc: boolean;
@@ -42,11 +45,36 @@ interface Article {
 
 const ArticleDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const [article, setArticle] = useState<Article | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState<boolean>(false);
+  const [deleting, setDeleting] = useState<boolean>(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [currentUserRole, setCurrentUserRole] = useState<string | null>(null);
 
-  const fetchArticle = async () => {
+  // Получаем роль текущего пользователя
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      // Декодируем JWT токен, чтобы получить роль
+      try {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        const userData = JSON.parse(jsonPayload);
+        setCurrentUserRole(userData.role);
+      } catch (error) {
+        console.error('Error decoding token:', error);
+      }
+    }
+  }, []);
+
+  const fetchArticle = useCallback(async () => {
     try {
       setError(null);
       const response = await api.get<Article>(`/articles/${id}`);
@@ -57,11 +85,29 @@ const ArticleDetail: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  }, [id]);
+
+  const handleDeleteArticle = async () => {
+    if (!id) return;
+    
+    setDeleting(true);
+    setDeleteError(null);
+    
+    try {
+      await api.delete(`/articles/${id}`);
+      setDeleteModalOpen(false);
+      navigate('/'); // Перенаправляем на главную страницу после удаления
+    } catch (error) {
+      console.error('Error deleting article:', error);
+      setDeleteError('Ошибка при удалении статьи. Пожалуйста, попробуйте снова.');
+    } finally {
+      setDeleting(false);
+    }
   };
 
   useEffect(() => {
     fetchArticle();
-  }, [id, fetchArticle]);
+  }, [fetchArticle]);
 
   if (error) {
     return (
@@ -126,15 +172,47 @@ const ArticleDetail: React.FC = () => {
 
             <Group justify="space-between">
               <Text size="lg">
-                Идентификатор статьи: <Text span fw={700}>#{article.id}</Text>
+                {article.external_id ? (
+                  <>
+                    Внешний ID: <Text span fw={700}>#{article.external_id}</Text>
+                  </>
+                ) : (
+                  <>
+                    Внешний ID: <Text span fw={700} c="red">отсутствует</Text>
+                  </>
+                )}
               </Text>
-              <Button
-                variant="outline"
-                color="blue"
-                leftSection={<IconEdit />}
-              >
-                Редактировать
-              </Button>
+              <Group>
+                {currentUserRole === 'admin' || currentUserRole === 'manager' ? (
+                  <Button
+                    variant="outline"
+                    color="blue"
+                    leftSection={<IconEdit />}
+                    onClick={() => navigate(`/edit-article/${article.id}`)}
+                  >
+                    Редактировать
+                  </Button>
+                ) : (
+                  <Button
+                    variant="outline"
+                    color="blue"
+                    leftSection={<IconEdit />}
+                    disabled
+                  >
+                    Редактировать
+                  </Button>
+                )}
+                {currentUserRole === 'admin' && (
+                  <Button
+                    variant="outline"
+                    color="red"
+                    leftSection={<IconTrash />}
+                    onClick={() => setDeleteModalOpen(true)}
+                  >
+                    Удалить статью
+                  </Button>
+                )}
+              </Group>
             </Group>
           </Paper>
 
@@ -220,6 +298,53 @@ const ArticleDetail: React.FC = () => {
           </Paper>
         </Stack>
       )}
+
+      {/* Модальное окно подтверждения удаления */}
+      <Modal
+        opened={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        title={
+          <Group gap="sm">
+            <IconAlertTriangle color="red" />
+            <Text fw={600}>Подтверждение удаления</Text>
+          </Group>
+        }
+        centered
+      >
+        <Stack gap="md">
+          <Text>
+            Вы уверены, что хотите удалить статью <Text fw={700}>"{article?.title}"</Text>?
+          </Text>
+          <Text c="dimmed">
+            Это действие нельзя будет отменить. Все данные статьи будут безвозвратно удалены.
+          </Text>
+          
+          {deleteError && (
+            <Alert variant="light" color="red" title="Ошибка">
+              {deleteError}
+            </Alert>
+          )}
+          
+          <Group justify="flex-end" mt="md">
+            <Button
+              variant="subtle"
+              color="gray"
+              onClick={() => setDeleteModalOpen(false)}
+              disabled={deleting}
+            >
+              Отмена
+            </Button>
+            <Button
+              color="red"
+              leftSection={<IconTrash />}
+              onClick={handleDeleteArticle}
+              loading={deleting}
+            >
+              Удалить
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
     </Container>
   );
 };

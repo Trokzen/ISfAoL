@@ -23,9 +23,11 @@ import {
   IconUsers,
   IconLogin,
   IconUserCircle,
-  IconUserSquare
+  IconUserSquare,
+  IconBriefcase
 } from '@tabler/icons-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import api from '../utils/api';
 
 const NavigationBar = ({ children }: { children: React.ReactNode }) => {
   const theme = useMantineTheme();
@@ -44,12 +46,12 @@ const NavigationBar = ({ children }: { children: React.ReactNode }) => {
     if (token) {
       // В реальном приложении здесь нужно сделать запрос к /auth/me для получения информации о пользователе
       try {
-        // Декодируем JWT токен, чтобы получить роль
+        // Декодируем JWT токен, чтобы получить роль и ФИО
         const tokenPayload = token.split('.')[1];
         const decodedPayload = atob(tokenPayload);
         const payload = JSON.parse(decodedPayload);
         setUserRole(payload.role || 'user');
-        setUserFullName(payload.sub || 'Пользователь');
+        setUserFullName(payload.full_name || payload.sub || 'Пользователь');
       } catch (e) {
         console.error('Error decoding token:', e);
         // Если не можем декодировать токен, делаем запрос к API
@@ -83,6 +85,7 @@ const NavigationBar = ({ children }: { children: React.ReactNode }) => {
     const links = [
       { link: '/', label: 'Главная', icon: <IconHome /> },
       { link: '/departments', label: 'Подразделения', icon: <IconBuilding /> },
+      { link: '/articles', label: 'Мои работы', icon: <IconBriefcase /> },
     ];
 
     if (userRole === 'admin') {
@@ -97,10 +100,7 @@ const NavigationBar = ({ children }: { children: React.ReactNode }) => {
         { link: '/add-article', label: 'Добавить статью', icon: <IconBook /> }
       );
     } else if (userRole === 'user') {
-      // Обычные пользователи не могут добавлять статьи
-      // links.push(
-      //   { link: '/add-article', label: 'Добавить статью', icon: <IconBook /> }
-      // );
+      // Обычные пользователи могут просматривать статьи
     }
 
     return links.map((item) => (

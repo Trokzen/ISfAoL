@@ -11,6 +11,9 @@ import AddEmployeePage from './pages/AddEmployeePage';
 import DepartmentsListPage from './pages/DepartmentsListPage';
 import AdminPage from './pages/AdminPage';
 import ManagerPage from './pages/ManagerPage';
+import EditArticlePage from './pages/EditArticlePage';
+import ArticlesPage from './pages/ArticlesPage';
+import MyWorksPage from './pages/MyWorksPage';
 import Navbar from './components/Navbar';
 
 const theme = createTheme({
@@ -56,6 +59,9 @@ function App() {
             <Route path="/departments" element={<DepartmentsListPage />} />
             <Route path="/admin" element={<AdminPage />} />
             <Route path="/manager" element={<ManagerPage />} />
+            <Route path="/edit-article/:id" element={<EditArticlePage />} />
+            <Route path="/articles" element={<ArticlesPage />} />
+            <Route path="/my-works" element={<MyWorksPage />} />
           </Routes>
         </Navbar>
       </Router>
