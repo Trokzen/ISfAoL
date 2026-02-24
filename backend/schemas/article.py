@@ -6,6 +6,7 @@ class AuthorOut(BaseModel):
     id: int
     article_id: int
     author_name: str
+    user_employee_id: Optional[int] = None  # ID сотрудника (если это внутренний автор)
     contribution: float
     applied_for_award: bool
     award_applied_date: Optional[str]  # Изменили на Optional[str] для корректной сериализации
@@ -19,12 +20,14 @@ class AuthorOut(BaseModel):
 class EmployeeOut(BaseModel):
     id: int
     fio: str
+    full_name: str
 
     class Config:
         from_attributes = True
 
 class ArticleOut(BaseModel):
     id: int
+    external_id: Optional[int] = None  # ID из внешней системы elibrary
     title: str
     year_pub: int
     in_rinc: bool
@@ -42,11 +45,14 @@ class AuthorUpdate(BaseModel):
 
 class AuthorCreate(BaseModel):
     author_name: str
+    user_employee_id: Optional[int] = None  # ID сотрудника (если это внутренний автор)
     contribution: float
     applied_for_award: bool
     award_applied_date: Optional[str] = None
 
 class ArticleCreate(BaseModel):
+    id: Optional[int] = None  # Внутренний ID (автоинкремент)
+    external_id: Optional[int] = None  # ID из внешней системы elibrary
     title: str
     year_pub: int
     in_rinc: bool

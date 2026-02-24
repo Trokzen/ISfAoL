@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import timedelta
 from database import get_db
-from models.user import User
+from models.article import User, Department
 from dotenv import load_dotenv
 import os
 
@@ -63,6 +63,34 @@ def get_current_manager_user(current_user: User = Depends(get_current_active_use
         )
     return current_user
 
+
+def get_department_manager_or_admin(dept_id: int, current_user: User = Depends(get_current_active_user), db: Session = Depends(get_db)):
+    """Проверяет, является ли пользователь администратором или менеджером указанного подразделения"""
+    if current_user.role == "admin":
+        return current_user
+    
+    if current_user.role == "manager":
+        # Проверяем, является ли пользователь менеджером указанного подразделения
+        department = db.query(Department).filter(Department.id == dept_id).first()
+        if not department:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Department not found"
+            )
+        
+        if department.manager_id != current_user.id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Access denied: You are not the manager of this department"
+            )
+        
+        return current_user
+    else:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Manager privileges required"
+        )
+
 def check_user_can_edit_article(user: User, article_id: int, db: Session):
     """
     Проверяет, может ли пользователь редактировать статью
@@ -77,16 +105,12 @@ def check_user_can_edit_article(user: User, article_id: int, db: Session):
 
     if user.role == "manager":
         # Менеджер может редактировать статьи, в которых есть авторы из его подразделения
-        # В текущей реализации используем информацию из ФИО пользователя для определения подразделения
-        # или связываем с сотрудниками через ФИО
-        from models.employee import Employee
-
+        # или статьи, в которых он является автором
         if user.full_name:
-            # Проверяем, есть ли авторы в статье, которые принадлежат к тому же подразделению
-            # что и пользователь (через информацию в ФИО)
+            # Проверяем, есть ли авторы в статье, которые совпадают с пользователем
             article_authors = db.query(Author).join(Article).filter(
                 Article.id == article_id,
-                Author.author_name.contains(user.full_name.split()[0])  # Проверяем по фамилии
+                Author.user_employee_id == user.id  # Проверяем по ID пользователя
             ).count()
 
             if article_authors > 0:
@@ -104,19 +128,13 @@ def check_user_can_edit_article(user: User, article_id: int, db: Session):
 
     if user.role == "user":
         # Пользователь может редактировать статьи, в которых он является автором
-        if user.full_name:
-            article_authors = db.query(Author).join(Article).filter(
-                Article.id == article_id,
-                Author.author_name.contains(user.full_name.split()[0])  # Проверяем по фамилии
-            ).count()
+        article_authors = db.query(Author).join(Article).filter(
+            Article.id == article_id,
+            Author.user_employee_id == user.id  # Проверяем по ID пользователя
+        ).count()
 
-            if article_authors > 0:
-                return True
-            else:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You don't have permission to edit this article"
-                )
+        if article_authors > 0:
+            return True
         else:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

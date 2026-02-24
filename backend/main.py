@@ -21,5 +21,5 @@ def root():
 # Подключаем роутеры
 app.include_router(auth_api.router, prefix="/auth", tags=["auth"])
 app.include_router(articles.router, prefix="/articles", tags=["articles"])
-app.include_router(employees.router, tags=["employees"])
+app.include_router(employees.router, prefix="/employees", tags=["employees"])
 app.include_router(departments.router, prefix="/departments", tags=["departments"])

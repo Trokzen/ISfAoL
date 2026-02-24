@@ -5,7 +5,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-from models.user import User
+from models.article import User, Department
 from schemas.user import UserOut, UserCreate
 from database import get_db
 from api.deps import get_current_active_user, get_current_admin_user, get_current_manager_user
@@ -73,7 +73,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     print(f"User authenticated successfully: {user.login}, role: {user.role}")
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     access_token = create_access_token(
-        data={"sub": user.login, "role": user.role}, expires_delta=access_token_expires
+        data={"sub": user.login, "role": user.role, "full_name": user.full_name}, expires_delta=access_token_expires
     )
     print(f"Access token created for user: {user.login}")
     return {"access_token": access_token, "token_type": "bearer"}
@@ -106,13 +106,15 @@ def register(user: UserCreate, db: Session = Depends(get_db)):
             raise HTTPException(status_code=400, detail="User with this email already exists")
 
     # Создаем нового пользователя
+    # Если id_elibrary_user не указано, используем full_name
+    id_elibrary_value = user.id_elibrary_user if user.id_elibrary_user is not None else user.full_name
     db_user = User(
         login=user.login,
         password_hash=get_password_hash(user.password),
         email=user.email,
         role="user",  # По умолчанию роль 'user'
-        full_name=user.full_name
-        # Поле department больше не используется
+        full_name=user.full_name,
+        id_elibrary_user=id_elibrary_value
     )
     db.add(db_user)
     db.commit()
@@ -137,18 +139,33 @@ def create_manager(
         if existing_email:
             raise HTTPException(status_code=400, detail="User with this email already exists")
 
+    # Если указан department_id, проверяем, существует ли подразделение
+    department = None
+    if user_data.department_id:
+        department = db.query(Department).filter(Department.id == user_data.department_id).first()
+        if not department:
+            raise HTTPException(status_code=404, detail="Department not found")
+
     # Создаем менеджера подразделения
+    # Если id_elibrary_user не указано, используем full_name
+    id_elibrary_value = user_data.id_elibrary_user if user_data.id_elibrary_user is not None else user_data.full_name
     db_user = User(
         login=user_data.login,
         password_hash=get_password_hash(user_data.password),
         email=user_data.email,
         role="manager",  # Роль менеджера
         full_name=user_data.full_name,
-        department=user_data.department
+        id_elibrary_user=id_elibrary_value
     )
     db.add(db_user)
     db.commit()
     db.refresh(db_user)
+
+    # Если указано подразделение, устанавливаем пользователя как менеджера подразделения
+    if department:
+        department.manager_id = db_user.id
+        db.commit()
+
     return db_user
 
 # Маршрут для создания обычного пользователя (только для менеджеров подразделений)
@@ -170,13 +187,15 @@ def create_user(
             raise HTTPException(status_code=400, detail="User with this email already exists")
 
     # Создаем обычного пользователя
+    # Если id_elibrary_user не указано, используем full_name
+    id_elibrary_value = user_data.id_elibrary_user if user_data.id_elibrary_user is not None else user_data.full_name
     db_user = User(
         login=user_data.login,
         password_hash=get_password_hash(user_data.password),
         email=user_data.email,
         role="user",  # Роль пользователя
         full_name=user_data.full_name,
-        department=user_data.department
+        id_elibrary_user=id_elibrary_value
     )
     db.add(db_user)
     db.commit()
