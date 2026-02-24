@@ -50,7 +50,8 @@ const NavigationBar = ({ children }: { children: React.ReactNode }) => {
         const tokenPayload = token.split('.')[1];
         const decodedPayload = atob(tokenPayload);
         const payload = JSON.parse(decodedPayload);
-        setUserRole(payload.role || 'user');
+        const role = payload.role || 'user';
+        setUserRole(role);
         setUserFullName(payload.full_name || payload.sub || 'Пользователь');
       } catch (e) {
         console.error('Error decoding token:', e);
@@ -91,12 +92,14 @@ const NavigationBar = ({ children }: { children: React.ReactNode }) => {
     if (userRole === 'admin') {
       links.push(
         { link: '/admin', label: 'Администрирование', icon: <IconShield /> },
+        { link: '/manage-user-articles', label: 'Управление статьями', icon: <IconBook /> },
         { link: '/add-article', label: 'Добавить статью', icon: <IconBook /> },
         { link: '/add-employee', label: 'Добавить сотрудника', icon: <IconUserPlus /> }
       );
     } else if (userRole === 'manager') {
       links.push(
         { link: '/manager', label: 'Управление', icon: <IconUsers /> },
+        { link: '/manage-user-articles', label: 'Управление статьями', icon: <IconBook /> },
         { link: '/add-article', label: 'Добавить статью', icon: <IconBook /> }
       );
     } else if (userRole === 'user') {

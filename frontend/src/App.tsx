@@ -14,6 +14,7 @@ import ManagerPage from './pages/ManagerPage';
 import EditArticlePage from './pages/EditArticlePage';
 import ArticlesPage from './pages/ArticlesPage';
 import MyWorksPage from './pages/MyWorksPage';
+import ManageUserArticlesPage from './pages/ManageUserArticlesPage';
 import Navbar from './components/Navbar';
 
 const theme = createTheme({
@@ -62,6 +63,7 @@ function App() {
             <Route path="/edit-article/:id" element={<EditArticlePage />} />
             <Route path="/articles" element={<ArticlesPage />} />
             <Route path="/my-works" element={<MyWorksPage />} />
+            <Route path="/manage-user-articles" element={<ManageUserArticlesPage />} />
           </Routes>
         </Navbar>
       </Router>

@@ -26,6 +26,9 @@ import {
   Center,
   Checkbox,
   UnstyledButton,
+  Loader,
+  Skeleton,
+  RingProgress,
 } from '@mantine/core';
 import {
   IconBook,
@@ -71,6 +74,7 @@ export default function ArticlesPage() {
   const [selectedArticlesForClaim, setSelectedArticlesForClaim] = useState<Set<number>>(new Set());
   const [bulkClaimLoading, setBulkClaimLoading] = useState<boolean>(false);
   const [userFullName, setUserFullName] = useState<string>('');
+  const [suggestionsLoading, setSuggestionsLoading] = useState<boolean>(true);
   const navigate = useNavigate();
 
   // Получаем ФИО пользователя из токена при загрузке
@@ -106,10 +110,13 @@ export default function ArticlesPage() {
   // Загрузка предложенных статей для текущего пользователя
   const fetchSuggestedArticles = async () => {
     try {
+      setSuggestionsLoading(true);
       const response = await api.get('/articles/my/suggestions');
       setSuggestedArticles(response.data);
     } catch (err) {
       console.error('Error fetching suggested articles:', err);
+    } finally {
+      setSuggestionsLoading(false);
     }
   };
 
@@ -354,6 +361,13 @@ export default function ArticlesPage() {
     fetchMyArticles();
   }, []);
 
+  // Убираем индикатор загрузки после загрузки всех данных
+  useEffect(() => {
+    if (articles.length > 0 || suggestedArticles.length > 0) {
+      setSuggestionsLoading(false);
+    }
+  }, [articles, suggestedArticles]);
+
   return (
     <Container size="xl" my="xl">
       <Paper shadow="lg" p="xl" radius="md" withBorder>
@@ -391,23 +405,49 @@ export default function ArticlesPage() {
         <Divider my="xl" />
 
         {/* Секция: Предложенные статьи */}
-        {filteredSuggestedArticles.length > 0 && (
-          <Box mb="xl">
-            <Group justify="space-between" align="center" mb="md">
-              <Title order={3}>
-                <Text span c="green">Возможно, это ваши работы:</Text>
-              </Title>
-              <Button
-                size="sm"
-                color="green"
-                variant="light"
-                onClick={handleBulkClaimArticles}
-                loading={bulkClaimLoading}
-                disabled={selectedArticlesForClaim.size === 0}
-              >
-                Привязать выбранные ({selectedArticlesForClaim.size})
-              </Button>
-            </Group>
+        <Box mb="xl">
+          <Group justify="space-between" align="center" mb="md">
+            <Title order={3}>
+              <Text span c="green">Возможно, это ваши работы:</Text>
+            </Title>
+            <Button
+              size="sm"
+              color="green"
+              variant="light"
+              onClick={handleBulkClaimArticles}
+              loading={bulkClaimLoading}
+              disabled={selectedArticlesForClaim.size === 0 || suggestionsLoading}
+            >
+              Привязать выбранные ({selectedArticlesForClaim.size})
+            </Button>
+          </Group>
+          
+          {suggestionsLoading ? (
+            // Индикатор загрузки
+            <Stack gap="md">
+              {[1, 2, 3].map((i) => (
+                <Card key={i} shadow="sm" padding="lg" radius="md" withBorder>
+                  <Stack gap="sm">
+                    <Group justify="space-between" align="flex-start">
+                      <Skeleton width={20} height={20} radius="xl" />
+                      <Skeleton width="80%" height={20} />
+                    </Group>
+                    <Group gap="xs">
+                      <Skeleton width={50} height={20} radius="xl" />
+                      <Skeleton width={50} height={20} radius="xl" />
+                    </Group>
+                    <Divider />
+                    <Stack gap="xs">
+                      <Skeleton width={100} height={16} />
+                      <Skeleton width="70%" height={14} />
+                      <Skeleton width="60%" height={14} />
+                    </Stack>
+                  </Stack>
+                </Card>
+              ))}
+            </Stack>
+          ) : filteredSuggestedArticles.length > 0 ? (
+            // Список статей
             <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">
               {filteredSuggestedArticles.map(article => {
                 const cache = articleAuthorCache.get(article.id);
@@ -458,8 +498,29 @@ export default function ArticlesPage() {
                 );
               })}
             </SimpleGrid>
-          </Box>
-        )}
+          ) : (
+            // Нет предложенных статей
+            <Box ta="center" py="xl">
+              <ThemeIcon size={80} radius="md" variant="light" color="gray" mb="md">
+                <IconBook style={{ width: rem(40), height: rem(40) }} />
+              </ThemeIcon>
+              <Title order={3} mb="sm">Нет предложенных статей</Title>
+              <Text c="dimmed" mb="md">
+                На данный момент нет статей, которые могут вам принадлежать
+              </Text>
+              <Button
+                leftSection={<IconSearch size={18} />}
+                variant="outline"
+                onClick={() => {
+                  setSearchQuery('');
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+              >
+                Поиск по всем статьям
+              </Button>
+            </Box>
+          )}
+        </Box>
 
         {/* Секция: Поиск статей */}
         <Box mb="xl">
