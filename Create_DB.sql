@@ -1,66 +1,73 @@
--- Создание схемы "elibrary"
-CREATE SCHEMA IF NOT EXISTS elibrary;
+-- Создание схемы
+DROP SCHEMA IF EXISTS elibrary CASCADE;
+CREATE SCHEMA elibrary AUTHORIZATION postgres;
 
--- Переключение на схему "elibrary"
-SET search_path TO elibrary;
-
--- Создание таблицы "Articles" (Статьи)
-CREATE TABLE IF NOT EXISTS elibrary.articles (
-    id INTEGER PRIMARY KEY,          -- Уникальный идентификатор статьи
-    title TEXT NOT NULL,             -- Название статьи
-    year_pub INTEGER NOT NULL,       -- Год публикации
-    in_rinc BOOLEAN NOT NULL         -- Включена ли статья в РИНЦ ("Да"/"Нет")
-);
-
--- Создание таблицы "Authors" (Авторы)
-CREATE TABLE IF NOT EXISTS elibrary.authors (
-    id SERIAL PRIMARY KEY,           -- Уникальный идентификатор записи
-    article_id INTEGER NOT NULL,     -- ID статьи (внешний ключ)
-    author_name TEXT NOT NULL,       -- Фамилия и инициалы автора
-    contribution REAL CHECK(contribution BETWEEN 0 AND 100), -- Вклад автора в статью (от 0 до 100%)
-    applied_for_award BOOLEAN NOT NULL, -- Подал ли автор статью на премию
-    award_applied_date DATE,         -- Дата подачи на премию
-    FOREIGN KEY (article_id) REFERENCES elibrary.articles(id) ON DELETE CASCADE
-);
-
--- Создание таблицы "Users" (Пользователи)
-CREATE TABLE IF NOT EXISTS elibrary.users (
-    id SERIAL PRIMARY KEY,           -- Уникальный идентификатор пользователя
-    login TEXT NOT NULL UNIQUE,      -- Логин пользователя (уникальный)
-    password_hash TEXT NOT NULL,     -- Хэш пароля
-    email TEXT UNIQUE,               -- Email пользователя (опционально, уникален)
-    role TEXT DEFAULT 'user'         -- Роль пользователя (например, 'admin', 'user')
+-- Таблица пользователей-сотрудников
+CREATE TABLE elibrary.users (
+    id SERIAL PRIMARY KEY,
+    login VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE,
+    role VARCHAR(50) DEFAULT 'user',
+    full_name VARCHAR(255) NOT NULL,
+    id_elibrary_user VARCHAR(255) NOT NULL,  -- совпадает с full_name
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Таблица подразделений
-CREATE TABLE IF NOT EXISTS elibrary.departments (
+CREATE TABLE elibrary.departments (
     id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL UNIQUE
+    name VARCHAR(255) UNIQUE NOT NULL,
+    manager_id INT REFERENCES elibrary.users(id)
 );
 
--- Таблица сотрудников
-CREATE TABLE IF NOT EXISTS elibrary.employees (
+-- Промежуточная таблица для связи сотрудников и подразделений (многие ко многим)
+CREATE TABLE elibrary.user_departments (
+    user_id INT REFERENCES elibrary.users(id) ON DELETE CASCADE,
+    department_id INT REFERENCES elibrary.departments(id) ON DELETE CASCADE,
+    is_primary BOOLEAN DEFAULT FALSE,  -- указывает, является ли это основным подразделением
+    position_title VARCHAR(255),       -- должность в данном подразделении
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id, department_id)
+);
+
+-- Таблица статей
+CREATE TABLE elibrary.articles (
     id SERIAL PRIMARY KEY,
-    FIO TEXT NOT NULL
+    external_id INTEGER UNIQUE,  -- ID из внешней системы elibrary (опционально)
+    title VARCHAR NOT NULL,
+    year_pub INTEGER NOT NULL,
+    in_rinc BOOLEAN DEFAULT FALSE
 );
 
--- Связующая таблица "сотрудник-подразделение" (многие ко многим)
-CREATE TABLE IF NOT EXISTS elibrary.employee_departments (
-    employee_id INTEGER NOT NULL,
-    department_id INTEGER NOT NULL,
-    PRIMARY KEY (employee_id, department_id),
-    FOREIGN KEY (employee_id) REFERENCES elibrary.employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (department_id) REFERENCES elibrary.departments(id) ON DELETE CASCADE
-);
-
--- Связующая таблица "сотрудник-статья" (многие ко многим)
-CREATE TABLE IF NOT EXISTS elibrary.employee_articles (
-    employee_id INTEGER NOT NULL,
+-- Таблица авторов (внутренних и внешних)
+CREATE TABLE elibrary.authors (
+    id SERIAL PRIMARY KEY,
     article_id INTEGER NOT NULL,
-    PRIMARY KEY (employee_id, article_id),
-    FOREIGN KEY (employee_id) REFERENCES elibrary.employees(id) ON DELETE CASCADE,
-    FOREIGN KEY (article_id) REFERENCES elibrary.articles(id) ON DELETE CASCADE
+    author_name TEXT NOT NULL,  -- имя автора как оно указано в статье
+    user_employee_id INTEGER,  -- ID сотрудника (если это внутренний автор)
+    contribution REAL CHECK(contribution BETWEEN 0 AND 100),
+    applied_for_award BOOLEAN NOT NULL DEFAULT FALSE,
+    award_applied_date DATE,
+    FOREIGN KEY (article_id) REFERENCES elibrary.articles(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_employee_id) REFERENCES elibrary.users(id)
 );
 
--- Индекс для ускорения поиска по логину
-CREATE INDEX IF NOT EXISTS idx_users_login ON elibrary.users(login);
+-- Промежуточная таблица для связи сотрудников и статей (если нужно отдельно от авторов)
+CREATE TABLE elibrary.employee_articles (
+    employee_id INT REFERENCES elibrary.users(id) ON DELETE CASCADE,
+    article_id INT REFERENCES elibrary.articles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (employee_id, article_id)
+);
+
+-- Индексы для производительности
+CREATE INDEX idx_articles_external_id ON elibrary.articles (external_id);
+CREATE INDEX idx_articles_year_pub ON elibrary.articles (year_pub);
+CREATE INDEX idx_articles_in_rinc ON elibrary.articles (in_rinc);
+CREATE INDEX idx_authors_article_id ON elibrary.authors (article_id);
+CREATE INDEX idx_authors_user_employee_id ON elibrary.authors (user_employee_id);
+CREATE INDEX idx_users_role ON elibrary.users (role);
+CREATE INDEX idx_user_departments_user_id ON elibrary.user_departments (user_id);
+CREATE INDEX idx_user_departments_department_id ON elibrary.user_departments (department_id);
