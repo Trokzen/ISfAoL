@@ -1,0 +1,365 @@
+/* Глобальные стили для всего приложения */
+
+/* Сброс стандартных стилей */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+/* Улучшенные стили для body */
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen,
+    Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Стили для контента приложения */
+.app-container {
+  min-height: 100vh;
+  padding: 2rem 0;
+}
+
+/* Стили для карточек */
+.card-hover {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Высокая контрастность */
+.high-contrast {
+  --mantine-color-bright: #FFFFFF;
+  --mantine-color-error: #ff0000;
+  --mantine-color-warning: #ffa500;
+  --mantine-color-success: #00ff00;
+  --mantine-color-info: #00ffff;
+}
+
+.high-contrast [data-mantine-color-scheme="dark"] {
+  --mantine-color-bright: #000000;
+}
+
+.high-contrast .mantine-Button-root,
+.high-contrast .mantine-ActionIcon-root {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+.high-contrast .mantine-Card-root,
+.high-contrast .mantine-Paper-root {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--mantine-color-bright) !important;
+}
+
+.high-contrast .mantine-Input-root {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Neon Cyberpunk Theme 🌃 */
+.cyberpunk {
+  /* Неоновые цвета */
+  --mantine-color-blue-0: #00f3ff;
+  --mantine-color-blue-1: #00d9e6;
+  --mantine-color-blue-2: #00bfff;
+  --mantine-color-blue-3: #0099cc;
+  --mantine-color-blue-4: #007399;
+  --mantine-color-blue-5: #004c66;
+  --mantine-color-blue-6: #002633;
+  --mantine-color-blue-7: #001a26;
+  --mantine-color-blue-8: #000d1a;
+  --mantine-color-blue-9: #00061a;
+  
+  --mantine-primary-color: blue;
+  
+  /* Розовый неон */
+  --mantine-color-pink-0: #ff00ff;
+  --mantine-color-pink-1: #e600e6;
+  --mantine-color-pink-2: #cc00cc;
+  --mantine-color-pink-3: #b300b3;
+  --mantine-color-pink-4: #990099;
+  --mantine-color-pink-5: #800080;
+  --mantine-color-pink-6: #660066;
+  --mantine-color-pink-7: #4d004d;
+  --mantine-color-pink-8: #330033;
+  --mantine-color-pink-9: #1a001a;
+  
+  /* Фиолетовый неон */
+  --mantine-color-violet-0: #bf00ff;
+  --mantine-color-violet-1: #a800e0;
+  --mantine-color-violet-2: #9100c1;
+  --mantine-color-violet-3: #7a00a2;
+  --mantine-color-violet-4: #630083;
+  --mantine-color-violet-5: #4c0064;
+  --mantine-color-violet-6: #350045;
+  --mantine-color-violet-7: #1e0026;
+  --mantine-color-violet-8: #0d0010;
+  --mantine-color-violet-9: #060008;
+  
+  /* Тёмный фон с градиентом */
+  --mantine-color-body: #0a0a0f;
+}
+
+.cyberpunk body {
+  background: linear-gradient(135deg, #0a0a0f 0%, #1a0a1f 50%, #0a0a1f 100%);
+  background-attachment: fixed;
+}
+
+/* Неоновое свечение для кнопок */
+.cyberpunk .mantine-Button-root,
+.cyberpunk .mantine-ActionIcon-root {
+  box-shadow: 0 0 10px rgba(0, 243, 255, 0.5),
+              0 0 20px rgba(0, 243, 255, 0.3),
+              inset 0 0 10px rgba(0, 243, 255, 0.1);
+  transition: all 0.3s ease;
+}
+
+.cyberpunk .mantine-Button-root:hover,
+.cyberpunk .mantine-ActionIcon-root:hover {
+  box-shadow: 0 0 20px rgba(0, 243, 255, 0.8),
+              0 0 40px rgba(0, 243, 255, 0.5),
+              inset 0 0 20px rgba(0, 243, 255, 0.2);
+  transform: translateY(-2px);
+}
+
+/* Неоновые карточки */
+.cyberpunk .mantine-Card-root,
+.cyberpunk .mantine-Paper-root {
+  background: linear-gradient(135deg, rgba(20, 10, 30, 0.9) 0%, rgba(10, 10, 20, 0.9) 100%);
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.2),
+              inset 0 0 30px rgba(191, 0, 255, 0.1);
+}
+
+/* Неоновые заголовки */
+.cyberpunk .mantine-Title-root,
+.cyberpunk .mantine-Text-root {
+  text-shadow: 0 0 10px rgba(0, 243, 255, 0.5);
+}
+
+/* Неоновые поля ввода */
+.cyberpunk .mantine-Input-root {
+  background: rgba(10, 10, 20, 0.8);
+  border: 1px solid rgba(0, 243, 255, 0.3);
+  box-shadow: inset 0 0 10px rgba(0, 243, 255, 0.1);
+}
+
+.cyberpunk .mantine-Input-root:focus {
+  border-color: #00f3ff;
+  box-shadow: 0 0 15px rgba(0, 243, 255, 0.5),
+              inset 0 0 20px rgba(0, 243, 255, 0.1);
+}
+
+/* Неоновые бейджи */
+.cyberpunk .mantine-Badge-root {
+  box-shadow: 0 0 10px rgba(191, 0, 255, 0.5);
+}
+
+/* Анимация сканирования для фона */
+.cyberpunk::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0, 243, 255, 0.03) 2px,
+    rgba(0, 243, 255, 0.03) 4px
+  );
+  pointer-events: none;
+  z-index: 9999;
+}
+
+/* ===========================================
+   Naturefy Themes - Природные темы
+   =========================================== */
+
+/* 🌲 Forest Theme - Лесная тема */
+.forest {
+  --mantine-primary-color: green !important;
+  --mantine-color-body: #f5f5dc !important;
+  --mantine-color-default: #2d5016 !important;
+}
+
+.forest body {
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.forest .mantine-Card-root,
+.forest .mantine-Paper-root,
+.forest .mantine-AppShell-header,
+.forest .mantine-AppShell-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(245, 255, 240, 0.9) 100%) !important;
+  border: 2px solid #2d5016 !important;
+  box-shadow: 0 4px 15px rgba(45, 80, 22, 0.2) !important;
+}
+
+.forest .mantine-Button-root {
+  background-color: #2d5016 !important;
+  box-shadow: 0 2px 8px rgba(45, 80, 22, 0.3) !important;
+}
+
+.forest .mantine-Button-root:hover {
+  background-color: #3d6b1f !important;
+}
+
+.forest .mantine-NavLink-root:hover {
+  background-color: rgba(45, 80, 22, 0.1) !important;
+}
+
+/* 🌊 Ocean Theme - Морская тема */
+.ocean {
+  --mantine-primary-color: #0077be !important;
+  --mantine-color-body: #e0f7fa !important;
+  --mantine-color-default: #0077be !important;
+}
+
+.ocean body {
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 50%, #80deea 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.ocean .mantine-Card-root,
+.ocean .mantine-Paper-root,
+.ocean .mantine-AppShell-header,
+.ocean .mantine-AppShell-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(224, 247, 250, 0.9) 100%) !important;
+  border: 2px solid #0077be !important;
+  box-shadow: 0 4px 15px rgba(0, 119, 190, 0.2) !important;
+}
+
+.ocean .mantine-Button-root {
+  background-color: #0077be !important;
+  box-shadow: 0 2px 8px rgba(0, 119, 190, 0.3) !important;
+}
+
+.ocean .mantine-Button-root:hover {
+  background-color: #0099dd !important;
+}
+
+.ocean .mantine-NavLink-root:hover {
+  background-color: rgba(0, 119, 190, 0.1) !important;
+}
+
+/* 🌅 Sunset Theme - Тема заката */
+.sunset {
+  --mantine-primary-color: #ff6b35 !important;
+  --mantine-color-body: #fff3e0 !important;
+  --mantine-color-default: #ff6b35 !important;
+}
+
+.sunset body {
+  background: linear-gradient(135deg, #ff6b35 0%, #ff8c69 30%, #ffb347 60%, #ffd700 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.sunset .mantine-Card-root,
+.sunset .mantine-Paper-root,
+.sunset .mantine-AppShell-header,
+.sunset .mantine-AppShell-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 243, 224, 0.9) 100%) !important;
+  border: 2px solid #ff6b35 !important;
+  box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3) !important;
+}
+
+.sunset .mantine-Button-root {
+  background-color: #ff6b35 !important;
+  box-shadow: 0 2px 8px rgba(255, 107, 53, 0.3) !important;
+}
+
+.sunset .mantine-Button-root:hover {
+  background-color: #ff8550 !important;
+}
+
+.sunset .mantine-NavLink-root:hover {
+  background-color: rgba(255, 107, 53, 0.1) !important;
+}
+
+/* 🏔️ Mountain Theme - Горная тема */
+.mountain {
+  --mantine-primary-color: #7f8c8d !important;
+  --mantine-color-body: #eceff1 !important;
+  --mantine-color-default: #7f8c8d !important;
+}
+
+.mountain body {
+  background: linear-gradient(135deg, #eceff1 0%, #cfd8dc 40%, #b0bec5 70%, #90a4ae 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.mountain .mantine-Card-root,
+.mountain .mantine-Paper-root,
+.mountain .mantine-AppShell-header,
+.mountain .mantine-AppShell-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(236, 239, 241, 0.9) 100%) !important;
+  border: 2px solid #7f8c8d !important;
+  box-shadow: 0 4px 15px rgba(127, 140, 141, 0.2) !important;
+}
+
+.mountain .mantine-Button-root {
+  background-color: #7f8c8d !important;
+  box-shadow: 0 2px 8px rgba(127, 140, 141, 0.3) !important;
+}
+
+.mountain .mantine-Button-root:hover {
+  background-color: #95a5a6 !important;
+}
+
+.mountain .mantine-NavLink-root:hover {
+  background-color: rgba(127, 140, 141, 0.1) !important;
+}
+
+/* 🏜️ Desert Theme - Пустынная тема */
+.desert {
+  --mantine-primary-color: #d2691e !important;
+  --mantine-color-body: #fff8e1 !important;
+  --mantine-color-default: #d2691e !important;
+}
+
+.desert body {
+  background: linear-gradient(135deg, #f4a460 0%, #deb887 30%, #f5deb3 60%, #fff8dc 100%) !important;
+  background-attachment: fixed !important;
+}
+
+.desert .mantine-Card-root,
+.desert .mantine-Paper-root,
+.desert .mantine-AppShell-header,
+.desert .mantine-AppShell-navbar {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 248, 225, 0.9) 100%) !important;
+  border: 2px solid #d2691e !important;
+  box-shadow: 0 4px 15px rgba(210, 105, 30, 0.2) !important;
+}
+
+.desert .mantine-Button-root {
+  background-color: #d2691e !important;
+  box-shadow: 0 2px 8px rgba(210, 105, 30, 0.3) !important;
+}
+
+.desert .mantine-Button-root:hover {
+  background-color: #e07b2e !important;
+}
+
+.desert .mantine-NavLink-root:hover {
+  background-color: rgba(210, 105, 30, 0.1) !important;
+}
+
+/* Адаптивные стили */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .card-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
