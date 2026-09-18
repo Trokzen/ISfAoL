@@ -9,6 +9,6 @@ class Department(Base):
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # ID менеджера подразделения
 
     # Связь с менеджером подразделения
-    manager = relationship("User", back_populates="managed_department")
-    # Связь с сотрудниками через промежуточную таблицу
-    employees = relationship("Employee", secondary="elibrary.employee_departments", overlaps="Employee.departments")
+    manager = relationship("User", foreign_keys=[manager_id])
+    # Связь с пользователями через промежуточную таблицу
+    users = relationship("User", secondary="elibrary.user_departments", back_populates="departments", overlaps="user_department_assoc")

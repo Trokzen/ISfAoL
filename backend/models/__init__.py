@@ -6,6 +6,7 @@ metadata = MetaData(schema="elibrary")
 
 Base = declarative_base(metadata=metadata)
 
-from .article import User, Article, Author, Department, UserDepartment, EmployeeArticle
+from .article import User, Article, Author, UserDepartment, EmployeeArticle
+from .department import Department
 
 __all__ = ["User", "Article", "Author", "Department", "UserDepartment", "EmployeeArticle"]

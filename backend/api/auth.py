@@ -4,8 +4,9 @@ import jwt
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
-from models.article import User, Department
+import bcrypt
+from models.article import User
+from models.department import Department
 from schemas.user import UserOut, UserCreate
 from database import get_db
 from api.deps import get_current_active_user, get_current_admin_user, get_current_manager_user
@@ -18,7 +19,6 @@ load_dotenv()
 router = APIRouter()
 
 # Настройка безопасности
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/token")
 
 # Настройки JWT
@@ -27,10 +27,14 @@ ALGORITHM = os.getenv("ALGORITHM", "HS256")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "30"))
 
 def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+    # Обрезаем пароль до 72 байт (ограничение bcrypt)
+    plain_password = plain_password[:72]
+    return bcrypt.checkpw(plain_password.encode('utf-8'), hashed_password.encode('utf-8'))
 
 def get_password_hash(password):
-    return pwd_context.hash(password)
+    # Обрезаем пароль до 72 байт (ограничение bcrypt)
+    password = password[:72]
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
 def authenticate_user(db: Session, login: str, password: str):
     try:
@@ -98,7 +102,8 @@ def read_users(
     # Если не администратор, фильтруем по подразделениям пользователя
     if current_user.role != "admin":
         # Получаем подразделения, которыми управляет пользователь
-        from models.article import Department, UserDepartment
+        from models.department import Department
+        from models.article import UserDepartment
         managed_depts = db.query(Department).filter(Department.manager_id == current_user.id).all()
         
         if managed_depts:
@@ -175,7 +180,7 @@ def delete_user(
         raise HTTPException(status_code=404, detail="User not found")
     
     # Проверяем, не является ли пользователь менеджером подразделения
-    from models.article import Department
+    from models.department import Department
     managed_depts = db.query(Department).filter(Department.manager_id == user_id).all()
     if managed_depts:
         raise HTTPException(
@@ -355,7 +360,8 @@ def create_user(
     
     # Если текущий пользователь - менеджер, добавляем созданного пользователя в его подразделение
     if current_user.role == "manager":
-        from models.article import Department, UserDepartment
+        from models.department import Department
+        from models.article import UserDepartment
         
         # Находим подразделения, которыми управляет менеджер
         managed_depts = db.query(Department).filter(Department.manager_id == current_user.id).all()

@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models.article import User, Department, UserDepartment, Article
+from models.article import User, UserDepartment, Article
+from models.department import Department
 from schemas.employee import EmployeeCreate, EmployeeUpdate, EmployeeOut, EmployeeCreateExtended, EmployeeCreateWithDetails
 from api.deps import get_current_active_user, get_current_admin_user
 from passlib.context import CryptContext

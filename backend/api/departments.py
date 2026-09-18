@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, Path
 from sqlalchemy.orm import Session
 from database import get_db
-from models.article import Department, User, Article
+from models.article import User, Article
+from models.department import Department
 from schemas.department import DepartmentCreate, DepartmentUpdate, DepartmentOut
 from api.deps import get_current_active_user, get_current_admin_user, get_current_manager_user, get_department_manager_or_admin
 

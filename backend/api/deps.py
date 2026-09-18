@@ -4,7 +4,8 @@ from sqlalchemy.orm import Session
 from jose import jwt, JWTError
 from datetime import timedelta
 from database import get_db
-from models.article import User, Department
+from models.article import User
+from models.department import Department
 from dotenv import load_dotenv
 import os
 

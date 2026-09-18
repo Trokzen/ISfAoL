@@ -1,8 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, Body
 from sqlalchemy.orm import Session, selectinload, joinedload
 from database import get_db
-from models.article import Article, Author, User, EmployeeArticle, Department
+from models.article import Article, Author, User, EmployeeArticle
 from models.article import User as UserAlias  # Избегаем конфликта имен
+from models.department import Department
 from schemas.article import ArticleOut, AuthorUpdate, AuthorCreate, ArticleCreate
 from api.deps import get_current_active_user, get_current_admin_user, get_current_manager_user, check_user_can_edit_article
 from utils.fio_utils import generate_author_variants, match_author_with_user

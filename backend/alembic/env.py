@@ -1,5 +1,6 @@
 from logging.config import fileConfig
 
+from sqlalchemy import text
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -19,7 +20,7 @@ if config.config_file_name is not None:
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 from database import Base
-from models import user, article, employee, department
+import models
 target_metadata = Base.metadata
 
 # other values from the config, defined by the needs of env.py,
@@ -50,7 +51,7 @@ def run_migrations_offline() -> None:
 
     with context.begin_transaction():
         # Устанавливаем search_path для использования схемы elibrary
-        context.execute("SET search_path TO elibrary")
+        context.execute(text("SET search_path TO elibrary"))
         context.run_migrations()
 
 
@@ -68,13 +69,16 @@ def run_migrations_online() -> None:
     )
 
     with connectable.connect() as connection:
+        # Создаем схему elibrary если она не существует
+        connection.execute(text("CREATE SCHEMA IF NOT EXISTS elibrary"))
+        # Устанавливаем search_path для использования схемы elibrary
+        connection.execute(text("SET search_path TO elibrary"))
+        
         context.configure(
             connection=connection, target_metadata=target_metadata
         )
 
         with context.begin_transaction():
-            # Устанавливаем search_path для использования схемы elibrary
-            connection.execute("SET search_path TO elibrary")
             context.run_migrations()
 
 

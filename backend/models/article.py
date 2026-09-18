@@ -23,20 +23,6 @@ class User(Base):
     authored_articles = relationship("Author", back_populates="user_employee")
 
 
-class Department(Base):
-    __tablename__ = "departments"  # Исправлено с "departements" на "departments"
-
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    name = Column(String(255), unique=True, nullable=False)
-    manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
-
-    # Связь с менеджером
-    manager = relationship("User", foreign_keys=[manager_id])
-
-    # Связь с пользователями через промежуточную таблицу
-    users = relationship("User", secondary="elibrary.user_departments", back_populates="departments", overlaps="user_department_assoc")
-
-
 class UserDepartment(Base):
     __tablename__ = "user_departments"
 

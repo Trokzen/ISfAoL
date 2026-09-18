@@ -5,7 +5,6 @@ from . import Base
 class Employee(Base):
     __tablename__ = "employees"
     id = Column(Integer, primary_key=True, index=True)
-    fio = Column(String, nullable=False)
 
     # Связи многие-ко-многим
     departments = relationship("Department", secondary="elibrary.employee_departments", overlaps="Department.employees")
