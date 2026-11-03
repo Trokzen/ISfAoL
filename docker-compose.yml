@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # PostgreSQL база данных
+  db:
+    build:
+      context: ./docker-postgres
+      dockerfile: Dockerfile
+    container_name: elibrary_db
+    environment:
+      POSTGRES_DB: elibrary
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - elibrary_network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Backend (FastAPI)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: elibrary_backend
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: elibrary
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "8000:8000"
+    networks:
+      - elibrary_network
+    command: >
+      sh -c "sleep 10 && alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"
+
+  # Frontend (React + Vite + Nginx)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: elibrary_frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - elibrary_network
+
+networks:
+  elibrary_network:
+    driver: bridge
+
+volumes:
+  postgres_data:
